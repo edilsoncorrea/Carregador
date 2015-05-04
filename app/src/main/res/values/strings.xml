@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Carregador</string>
+
+    <string name="hello_world">Teste de HTTP</string>
+    <string name="action_settings">Configurações</string>
+</resources>
