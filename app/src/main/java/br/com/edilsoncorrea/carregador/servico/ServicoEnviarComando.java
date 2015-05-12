@@ -51,7 +51,7 @@ public class ServicoEnviarComando extends Service implements Runnable{
         BroadcastReceiver batteryLevelReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 //context.unregisterReceiver(this);
-                Log.i("Battery", ":: IN RECEIVER");
+                Log.i("Bateria", ":: Receiver");
 
                 int rawlevel = intent.getIntExtra("level", -1);
                 int scale = intent.getIntExtra("scale", -1);
@@ -60,8 +60,13 @@ public class ServicoEnviarComando extends Service implements Runnable{
                     level = (rawlevel * 100) / scale;
                 }
 
-                Log.i("Battery", "Battery Level Remaining: " + level + "%");
-                Toast.makeText(context, "Battery Level Remaining: " + level + "%", Toast.LENGTH_LONG).show();
+                if (level < 20) {
+                    EnviaComando ligar =  new EnviaComando(context, true);
+                    ligar.execute();
+                }
+
+                Log.i("Battery", "Nivel restante da bateria: " + level + "%");
+                Toast.makeText(context, "Nivel restante da bateria: " + level + "%", Toast.LENGTH_LONG).show();
                 //btnConsumer.setText("Battery Level Remaining: " + level + "%");
             }
         };

@@ -29,8 +29,17 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Bateria"
-        android:id="@+id/btBateria"
+        android:text="Lig BT"
+        android:id="@+id/btBluetooth"
         android:layout_below="@+id/btDesligar"
         android:layout_toRightOf="@+id/textView" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Deslig BT"
+        android:id="@+id/btDesligaBT"
+        android:layout_below="@+id/btBluetooth"
+        android:layout_toRightOf="@+id/textView" />
+
 </RelativeLayout>
