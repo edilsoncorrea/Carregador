@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -12,6 +13,8 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import br.com.edilsoncorrea.carregador.R;
@@ -28,39 +31,38 @@ public class PrincipalActivity extends Activity {
     private BluetoothSocket socket;
     private OutputStream out;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_principal);
 
-        btfAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if (btfAdapter == null) {
-            Toast.makeText(this, "Bluetooth nao disponivel neste aparelho", Toast.LENGTH_LONG).show();
-            finish();
-        }
+//        btfAdapter = BluetoothAdapter.getDefaultAdapter();
+//
+//        if (btfAdapter == null) {
+//            Toast.makeText(this, "Bluetooth nao disponivel neste aparelho", Toast.LENGTH_LONG).show();
+//            finish();
+//        }
 
         Button btLigar = (Button) findViewById(R.id.btLigar);
         btLigar.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-//                EnviaComandoBT ligar = new EnviaComandoBT(PrincipalActivity.this, true);
-//                ligar.execute();
+                EnviaComandoBT ligar = new EnviaComandoBT(PrincipalActivity.this, true);
+                ligar.execute();
 
-                try {
-                    out = socket.getOutputStream();
-
-                    String msg = "L";
-
-                    if (out != null) {
-                        out.write(msg.getBytes());
-                    }
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    out = socket.getOutputStream();
+//
+//                    String msg = "L";
+//
+//                    if (out != null) {
+//                        out.write(msg.getBytes());
+//                    }
+//
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
 
             }
@@ -69,22 +71,22 @@ public class PrincipalActivity extends Activity {
         Button btDesligar = (Button) findViewById(R.id.btDesligar);
         btDesligar.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-//                EnviaComandoBT ligar =  new EnviaComandoBT(PrincipalActivity.this, false);
-//                ligar.execute();
+                EnviaComandoBT ligar =  new EnviaComandoBT(PrincipalActivity.this, false);
+                ligar.execute();
 
-                try {
-                    out = socket.getOutputStream();
-
-                    String msg = "D";
-
-                    if (out != null) {
-                        out.write(msg.getBytes());
-                    }
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    out = socket.getOutputStream();
+//
+//                    String msg = "D";
+//
+//                    if (out != null) {
+//                        out.write(msg.getBytes());
+//                    }
+//
+//
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
 
             }
@@ -93,28 +95,36 @@ public class PrincipalActivity extends Activity {
         Button btBluetooth = (Button) findViewById(R.id.btBluetooth);
         btBluetooth.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                device = btfAdapter.getRemoteDevice("00:12:03:23:70:80");
-                uuidSerial = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-                try {
-                    socket = device.createRfcommSocketToServiceRecord(uuidSerial);
-                    socket.connect();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//               List<BluetoothDevice> lista;
+//
+//                lista = new ArrayList<BluetoothDevice>(btfAdapter.getBondedDevices());
+//
+//                for (BluetoothDevice  device : lista) {
+//
+//                    //device = btfAdapter.getRemoteDevice("00:12:03:23:70:80");
+//                    uuidSerial = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+//                    try {
+//                        socket = device.createRfcommSocketToServiceRecord(uuidSerial);
+//                        socket.connect();
+//
+//
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
             }
         });
 
         Button btDesligaBT = (Button) findViewById(R.id.btDesligaBT);
         btDesligaBT.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                try {
-                    out.close();
-
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    out.close();
+//
+//                    socket.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
             }
         });
 
@@ -124,13 +134,13 @@ public class PrincipalActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        if (btfAdapter.isEnabled()) {
-            Toast.makeText(this, "Bluetooth esta ligado", Toast.LENGTH_LONG).show();
-        }
-        else {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, 0);
-        }
+//        if (btfAdapter.isEnabled()) {
+//            Toast.makeText(this, "Bluetooth esta ligado", Toast.LENGTH_LONG).show();
+//        }
+//        else {
+//            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//            startActivityForResult(enableIntent, 0);
+//        }
     }
 
     @Override

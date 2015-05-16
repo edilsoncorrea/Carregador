@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -40,6 +41,15 @@ public class EnviaComandoBT  extends AsyncTask<Void, Void, Integer> {
                 BluetoothSocket socket = device.createRfcommSocketToServiceRecord(uuidSerial);
                 socket.connect();
 
+                int contador = 0;
+
+                SystemClock.sleep(500);
+
+                while ((! socket.isConnected()) && (contador < 10)) {
+                    contador++;
+                    SystemClock.sleep(500);
+                }
+
                 OutputStream out = socket.getOutputStream();
 
                 String msg;
@@ -53,6 +63,9 @@ public class EnviaComandoBT  extends AsyncTask<Void, Void, Integer> {
                 if (out != null) {
                     out.write(msg.getBytes());
                 }
+
+                SystemClock.sleep(500);
+
 
                 out.close();
 
