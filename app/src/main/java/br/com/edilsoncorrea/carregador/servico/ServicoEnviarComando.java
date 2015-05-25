@@ -21,7 +21,15 @@ public class ServicoEnviarComando extends Service implements Runnable{
     private boolean ativo;
     private static SharedPreferences configuracoes = null;
     private static Long inicioCarga = Long.valueOf(0);
-    private static Long terminoCarga = Long.valueOf(0);
+    private static int nivelInicial = 0;
+    private static int nivelCorrenteBateria = 0;
+    private static boolean carregando = false;
+
+    private static BroadcastReceiver batteryLevelReceiver = null;
+    private static BroadcastReceiver batteryLowReceiver = null;
+    private static BroadcastReceiver batteryChargedReceiver = null;
+    private static BroadcastReceiver carregaddorConectadoReceiver = null;
+    private static BroadcastReceiver carregaddorDesconectadoReceiver = null;
 
     @Override
     public IBinder onBind(Intent i) {
@@ -49,7 +57,6 @@ public class ServicoEnviarComando extends Service implements Runnable{
 
     @Override
     public void run() {
-        batteryLevel();
         batteryLow();
         batteryCharged();
         carregadorConectado();
@@ -57,25 +64,27 @@ public class ServicoEnviarComando extends Service implements Runnable{
     }
 
     private void batteryLevel() {
-        BroadcastReceiver batteryLevelReceiver = new BroadcastReceiver() {
+        batteryLevelReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                 //context.unregisterReceiver(this);
                 Log.i("Bateria", ":: Receiver");
 
-                int rawlevel = intent.getIntExtra("level", -1);
-                int scale = intent.getIntExtra("scale", -1);
-                int level = -1;
-                if (rawlevel >= 0 && scale > 0) {
-                    level = (rawlevel * 100) / scale;
-                }
+                nivelCorrenteBateria = getLevel(intent);
 
-                if (level < 27) {
+                if (nivelCorrenteBateria < 20) {
                     EnviaComandoBT ligar =  new EnviaComandoBT(context, true);
                     ligar.execute();
                 }
 
-                Log.i("Battery", "Nivel restante da bateria: " + level + "%");
-                Toast.makeText(context, "Nivel restante da bateria: " + level + "%", Toast.LENGTH_LONG).show();
+                if (nivelCorrenteBateria == 100) {
+                    EnviaComandoBT ligar =  new EnviaComandoBT(context, false);
+                    ligar.execute();
+                    Toast.makeText(context, "Carregado!", Toast.LENGTH_LONG).show();
+                }
+
+
+                Log.i("Battery", "Nivel restante da bateria: " + nivelCorrenteBateria + "%");
+                //Toast.makeText(context, "Mudanca. Nivel restante da bateria: " + level + "%", Toast.LENGTH_LONG).show();
                 //btnConsumer.setText("Battery Level Remaining: " + level + "%");
             }
         };
@@ -84,8 +93,18 @@ public class ServicoEnviarComando extends Service implements Runnable{
         registerReceiver(batteryLevelReceiver, batteryLevelFilter);
     }
 
+    private int getLevel(Intent intent) {
+        int rawlevel = intent.getIntExtra("level", -1);
+        int scale = intent.getIntExtra("scale", -1);
+        int level = -1;
+        if (rawlevel >= 0 && scale > 0) {
+            level = (rawlevel * 100) / scale;
+        }
+        return level;
+    }
+
     private void batteryLow() {
-        BroadcastReceiver batteryLevelReceiver = new BroadcastReceiver() {
+        batteryLowReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
                     EnviaComandoBT ligar =  new EnviaComandoBT(context, true);
                     ligar.execute();
@@ -93,60 +112,116 @@ public class ServicoEnviarComando extends Service implements Runnable{
         };
 
         IntentFilter batteryLowFilter = new IntentFilter(Intent.ACTION_BATTERY_LOW);
-        registerReceiver(batteryLevelReceiver, batteryLowFilter);
+        registerReceiver(batteryLowReceiver, batteryLowFilter);
     }
 
     private void batteryCharged() {
-        BroadcastReceiver batteryLevelReceiver = new BroadcastReceiver() {
+        batteryChargedReceiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
-                EnviaComandoBT ligar =  new EnviaComandoBT(context, true);
-                ligar.execute();
+                if (carregando) {
+                   AtualizaTempoCarga(context);
+
+                    EnviaComandoBT ligar = new EnviaComandoBT(context, false);
+                    ligar.execute();
+                }
+
+                carregando = false;
             }
         };
 
         IntentFilter batteryChargedFilter = new IntentFilter(Intent.ACTION_BATTERY_OKAY);
-        registerReceiver(batteryLevelReceiver, batteryChargedFilter);
+        registerReceiver(batteryChargedReceiver, batteryChargedFilter);
     }
 
     private void carregadorConectado() {
-        BroadcastReceiver carregaddorConectadoReceiver = new BroadcastReceiver() {
+        carregaddorConectadoReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                batteryLevel();
+
+                carregando = true;
                 inicioCarga = System.currentTimeMillis();
+                nivelInicial = nivelCorrenteBateria;
+
+                Log.i("Battery", "Nivel restante da bateria: " + nivelInicial + "%");
+                Toast.makeText(context, "Conectado. Nivel restante da bateria: " + nivelInicial + "%", Toast.LENGTH_LONG).show();
+
             }
         };
 
-        IntentFilter batteryChargedFilter = new IntentFilter(Intent.ACTION_POWER_CONNECTED);
-        registerReceiver(carregaddorConectadoReceiver, batteryChargedFilter);
-
+        IntentFilter filtroCarregadorConectado = new IntentFilter(Intent.ACTION_POWER_CONNECTED);
+        registerReceiver(carregaddorConectadoReceiver, filtroCarregadorConectado);
     }
 
     private void carregadorDesconectado() {
-        BroadcastReceiver carregaddorDesconectadoReceiver = new BroadcastReceiver() {
+        carregaddorDesconectadoReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                if (carregando) {
+                    AtualizaTempoCarga(context);
+                }
 
-                Long tempoTotalCarga = configuracoes.getLong("TempoTotalCarga", 0);
-                int quantidadeCargas = configuracoes.getInt("QuantidadeCargas", 0);
+                carregando = false;
 
-                tempoTotalCarga = tempoTotalCarga + (System.currentTimeMillis() - inicioCarga);
-                quantidadeCargas++;
-
-                SharedPreferences.Editor editor = configuracoes.edit();
-
-                editor.clear();
-                editor.putLong("TempoTotalCarga", tempoTotalCarga);
-                editor.putInt("QuantidadeCargas", quantidadeCargas);
-                editor.commit();
+                desfazRegistroBatteryLevel();
             }
         };
 
-        IntentFilter batteryChargedFilter = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
-        registerReceiver(carregaddorDesconectadoReceiver, batteryChargedFilter);
+        IntentFilter filtroCarregadorDesconectado = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED);
+        registerReceiver(carregaddorDesconectadoReceiver, filtroCarregadorDesconectado);
+    }
+
+    private void AtualizaTempoCarga(Context context) {
+        Long tempoTotalCarga = configuracoes.getLong("TempoTotalCarga", 0);
+        int quantidadeCargas = configuracoes.getInt("QuantidadeCargas", 0);
+        int nivelFinal = nivelCorrenteBateria;
+        int tempoCargaCorrente = (int) ((System.currentTimeMillis() - inicioCarga) / 60000);
+        int percentualCarregado = (nivelFinal - nivelInicial);
+
+        if ((percentualCarregado > 0) && (tempoCargaCorrente >= 10 )) {
+            //Ajusta a carga proporcionalmente
+            double coeficienteCarga = ((double)percentualCarregado / 100.0);
+            tempoCargaCorrente = (int) (tempoCargaCorrente / coeficienteCarga);
+
+            tempoTotalCarga = tempoTotalCarga + (tempoCargaCorrente * percentualCarregado);
+            quantidadeCargas = quantidadeCargas + percentualCarregado;
+
+            SharedPreferences.Editor editor = configuracoes.edit();
+
+            editor.clear();
+            editor.putLong("TempoTotalCarga", tempoTotalCarga);
+            editor.putInt("QuantidadeCargas", quantidadeCargas);
+            editor.commit();
+
+            Log.i("Battery", "Nivel restante da bateria: " + nivelFinal + "%");
+            Toast.makeText(context, "Desconectado. Nivel restante da bateria: " + nivelFinal + "%", Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Desconectado. Tempo projetado de carga: " + tempoCargaCorrente, Toast.LENGTH_LONG).show();
+
+        } else {
+            Log.i("Battery", "Nao carregou");
+            Toast.makeText(context, "Nao carregou", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void desfazRegistroBatteryLevel() {
+        if (batteryLevelReceiver != null) {
+            unregisterReceiver(batteryLevelReceiver);
+        };
+
+    }
+
+    private void RetiraRegistros() {
+        desfazRegistroBatteryLevel();
+
+        unregisterReceiver(batteryLowReceiver);
+        unregisterReceiver(batteryChargedReceiver);
+        unregisterReceiver(carregaddorConectadoReceiver);
+        unregisterReceiver(carregaddorDesconectadoReceiver);
     }
 
     @Override
     public void onDestroy() {
+        RetiraRegistros();
         //Ao encerrar o servico, altera o flag para a Thread parar (isto eh importante para encerrar
         //a thread caso alguem tenha chamado o stopService(intent)
         ativo = false;

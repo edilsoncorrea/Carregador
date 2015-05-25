@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import br.com.edilsoncorrea.carregador.R;
+import br.com.edilsoncorrea.carregador.servico.ServicoEnviarComando;
 import br.com.edilsoncorrea.carregador.tarefas.EnviaComando;
 import br.com.edilsoncorrea.carregador.tarefas.EnviaComandoBT;
 
@@ -30,9 +32,10 @@ public class PrincipalActivity extends Activity {
     private UUID uuidSerial;
     private BluetoothSocket socket;
     private OutputStream out;
+    private Intent serviceIntent;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_principal);
@@ -95,6 +98,8 @@ public class PrincipalActivity extends Activity {
         Button btBluetooth = (Button) findViewById(R.id.btBluetooth);
         btBluetooth.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
+                serviceIntent = new Intent(PrincipalActivity.this, ServicoEnviarComando.class);
+                startService(serviceIntent);
 //               List<BluetoothDevice> lista;
 //
 //                lista = new ArrayList<BluetoothDevice>(btfAdapter.getBondedDevices());
@@ -118,6 +123,14 @@ public class PrincipalActivity extends Activity {
         Button btDesligaBT = (Button) findViewById(R.id.btDesligaBT);
         btDesligaBT.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
+                stopService(serviceIntent);
+                SharedPreferences.Editor editor = getSharedPreferences("Configuracoes", MODE_PRIVATE).edit();
+
+                editor.clear();
+                editor.putLong("TempoTotalCarga", 0);
+                editor.putInt("QuantidadeCargas", 0);
+                editor.commit();
+
 //                try {
 //                    out.close();
 //
